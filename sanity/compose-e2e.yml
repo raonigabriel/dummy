@@ -1,0 +1,12 @@
+version: "3.3"
+services:
+  e2e:
+    build: .
+    volumes:
+      - ./postman:/tmp
+    networks:
+      - services-network
+
+networks:
+  services-network:
+    name: e2e

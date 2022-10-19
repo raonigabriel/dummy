@@ -1,0 +1,36 @@
+name: 'e2e'
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  e2e:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      id: checkout
+      uses: actions/checkout@v3
+
+    - name: Start services # in background
+      run: docker compose -f "./sanity/compose-services.yml" up -d --build
+
+    - name: Run e2e tests # in foreground
+      run: docker compose -f "./sanity/compose-e2e.yml" up --build --exit-code-from e2e
+
+    - name: Archive E2E results
+      uses: actions/upload-artifact@v3
+      if: always() # execute this step no matter what happens above
+      with:
+        name: e2e-report
+        path: ./sanity/postman/report.html
+
+    - name: Cleanup e2e
+      if: always() # execute this step no matter what happens above
+      run: docker compose -f "./sanity/compose-e2e.yml" down --remove-orphans --rmi all
+
+    - name: Cleanup services
+      if: always() # execute this step no matter what happens above
+      run: docker compose -f "./sanity/compose-services.yml" down --remove-orphans --rmi all
